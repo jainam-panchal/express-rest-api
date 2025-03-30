@@ -1,2 +1,4 @@
 PORT=
-MONGO_URI=
+MONGO_URI=mongodb://localhost:27017/<dbname>
+REDIS_HOST=localhost
+REDIS_PORT=6379
