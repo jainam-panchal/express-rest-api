@@ -10,25 +10,24 @@ import {
   getParticipantCache,
   setParticipantCache,
   delParticipantCache,
-  getAllParticipantsCache,
-  setAllParticipantsCache,
-  delAllParticipantsCache
+  getAllParticipantsCache
 } from '../cacheHelper/participantCacheHelper.js';
 
 export const getAllParticipants = async (req, res) => {
   try {
-
-    // Check if it exists in the cache first
+    // Check if participants exist in cache
     const cachedParticipants = await getAllParticipantsCache();
     if (cachedParticipants) {
-      return res.json(cachedParticipants);
+      return res.json(Object.values(cachedParticipants)); // Convert HashMap values to array
     }
-    
+
     const participants = await getAll();
 
-    // Cache update
-    await setAllParticipantsCache(participants);
-    
+    // Cache update (store each participant in HashMap)
+    for (const participant of participants) {
+      await setParticipantCache(participant._id, participant);
+    }
+
     res.json(participants);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -38,8 +37,7 @@ export const getAllParticipants = async (req, res) => {
 export const getParticipant = async (req, res) => {
   const { id } = req.params;
   try {
-
-    // Check if it exists in the cache first
+    // Check if participant exists in cache
     const cachedParticipant = await getParticipantCache(id);
     if (cachedParticipant) {
       return res.json(cachedParticipant);
@@ -51,7 +49,7 @@ export const getParticipant = async (req, res) => {
     }
 
     // Cache update
-    await setParticipantCache(id, participant);
+    await setParticipantCache(participant._id, participant);
 
     res.json(participant);
   } catch (error) {
@@ -63,11 +61,9 @@ export const createParticipant = async (req, res) => {
   const { name, age, role } = req.body;
   try {
     const participant = await create({ name, age, role });
-    
-    // Cache Update
-    await setParticipantCache(participant.id, participant);
-    await delAllParticipantsCache();
-    setImmediate(repopulateAllParticipantsCache);
+
+    // Cache update
+    await setParticipantCache(participant._id, participant);
 
     res.status(201).json(participant);
   } catch (error) {
@@ -85,9 +81,7 @@ export const updateParticipant = async (req, res) => {
     }
 
     // Cache update
-    await setParticipantCache(id, participant);
-    await delAllParticipantsCache();
-    setImmediate(repopulateAllParticipantsCache);
+    await setParticipantCache(participant._id, participant);
 
     res.json(participant);
   } catch (error) {
@@ -105,20 +99,9 @@ export const deleteParticipant = async (req, res) => {
 
     // Cache update
     await delParticipantCache(id);
-    await delAllParticipantsCache();
-    setImmediate(repopulateAllParticipantsCache);
 
     res.status(200).json({ message: 'Participant deleted successfully', participant });
   } catch (error) {
     res.status(500).json({ error: error.message });
-  }
-};
-
-const repopulateAllParticipantsCache = async () => {
-  try {
-    const participants = await getAll();
-    await setAllParticipantsCache(participants);
-  } catch (error) {
-    console.error('Error repopulating participants cache:', error.message);
   }
 };
