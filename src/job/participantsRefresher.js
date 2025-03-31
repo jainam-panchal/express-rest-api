@@ -16,7 +16,9 @@ participantQueue.process(async (job) => {
   try {
     logger.info("🔄 Refreshing participants cache...");
     const participants = await getAll();
+
     await setAllParticipantsCache(participants);
+
     logger.info("✅ Participants cache updated successfully");
   } catch (error) {
     logger.error(`❌ Error refreshing participants cache: ${error.message}`);
@@ -25,9 +27,7 @@ participantQueue.process(async (job) => {
 
 const scheduleCacheRefreshJob = () => {
   logger.info("⏳ Scheduling cache refresher job...");
-
-  participantQueue.add({}, { repeat: { cron: '* * * * *' } }); // Runs every minute
-
+  participantQueue.add({}, { repeat: { cron: '0 * * * *' } }); // Runs every hour
   logger.info(`🔔 Cache refresher job scheduled.`);
 };
 
